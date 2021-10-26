@@ -7,12 +7,15 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Interop;
 
 namespace ScreenLog
 {
     class Program
     {
+        [STAThread]
         private static void Main(string[] args)
         {
             string appGuid = ((GuidAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(GuidAttribute), false).GetValue(0)).Value.ToString();
@@ -23,7 +26,6 @@ namespace ScreenLog
                 {
                     while (true)
                     {
-                        bool flag = true;
                         try
                         {
                             DateTime now = DateTime.Now;
@@ -50,26 +52,28 @@ namespace ScreenLog
 
         public static void CaputeScreen(string file)
         {
+            System.Windows.Media.Matrix toDevice;
+            using (var source = new HwndSource(new HwndSourceParameters()))
+            {
+                toDevice = source.CompositionTarget.TransformToDevice;
+            }
+            var screenWidth = (int)Math.Round(SystemParameters.PrimaryScreenWidth * toDevice.M11);
+            var screenHeight = (int)Math.Round(SystemParameters.PrimaryScreenHeight * toDevice.M22);
+
             Rectangle bounds = Screen.PrimaryScreen.Bounds;
             int width = bounds.Width;
             bounds = Screen.PrimaryScreen.Bounds;
-            Bitmap bmpScreenshot = new Bitmap(width, bounds.Height, PixelFormat.Format32bppArgb);
-            Graphics gfxScreenshot = Graphics.FromImage(bmpScreenshot);
-            Graphics graphics = gfxScreenshot;
-            bounds = Screen.PrimaryScreen.Bounds;
-            int x = bounds.X;
-            bounds = Screen.PrimaryScreen.Bounds;
-            int y = bounds.Y;
-            bounds = Screen.PrimaryScreen.Bounds;
-            graphics.CopyFromScreen(x, y, 0, 0, bounds.Size, CopyPixelOperation.SourceCopy);
-            string dir = Path.GetDirectoryName(file);
-            if (!Directory.Exists(dir))
+            using (var bmpScreenshot = new Bitmap(width, bounds.Height, PixelFormat.Format32bppArgb))
+            using (var graphics = Graphics.FromImage(bmpScreenshot))
             {
-                Directory.CreateDirectory(dir);
-            }
-            bmpScreenshot.Save(file, ImageFormat.Png);
-            bmpScreenshot.Dispose();
-            gfxScreenshot.Dispose();
+                graphics.CopyFromScreen(0, 0, 0, 0, new System.Drawing.Size(screenWidth, screenHeight));
+                string dir = Path.GetDirectoryName(file);
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+                bmpScreenshot.Save(file, ImageFormat.Png);
+            }                
         }
     }
 }
