@@ -38,7 +38,7 @@ namespace ScreenLog
                                 file3 = Path.GetFileNameWithoutExtension(file3) + "_" + cont + Path.GetExtension(file3);
                                 cont++;
                             }
-                            CaputeScreen(file3);
+                            CapureScreen(file3);
                         }
                         catch (Exception ex)
                         {
@@ -50,7 +50,7 @@ namespace ScreenLog
             }
         }
 
-        public static void CaputeScreen(string file)
+        public static void CapureScreen(string file)
         {
             System.Windows.Media.Matrix toDevice;
             using (var source = new HwndSource(new HwndSourceParameters()))
